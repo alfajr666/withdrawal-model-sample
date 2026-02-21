@@ -1,0 +1,16 @@
+# System files
+.DS_Store
+__pycache__/
+*.pyc
+
+# Data (Generated/Raw)
+data/raw/
+dashboard/data.js
+
+# Internal Briefs
+AGENT_BRIEF.md
+DASHBOARD_BRIEF.md
+
+# Env
+.venv/
+env/

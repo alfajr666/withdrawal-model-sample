@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liquidity Sentinel | Exchange Stress Testing</title>
+    <!-- Technical Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap"
+        rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="dark-theme">
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo">◈</div>
+                <div class="brand-text">
+                    <h1>Liquidity Sentinel</h1>
+                    <p>Stress Testing · Synthetic Demo</p>
+                </div>
+            </div>
+
+            <nav class="nav-links">
+                <a href="#overview" class="nav-item active" data-section="overview">
+                    <span class="icon">◈</span> Overview
+                </a>
+                <a href="#withdrawal" class="nav-item" data-section="withdrawal">
+                    <span class="icon">◉</span> Withdrawal Risk
+                </a>
+                <a href="#solvency" class="nav-item" data-section="solvency">
+                    <span class="icon">≡</span> Solvency
+                </a>
+                <a href="#reserve" class="nav-item" data-section="reserve">
+                    <span class="icon">⊛</span> Reserve Policy
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <p>Designed for Treasury Professionals</p>
+                <div class="author">
+                    <span class="label">Author</span>
+                    <span class="name">Gilang Fajar</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-bar">
+                <div class="section-title">
+                    <h2 id="current-section-name">Overview</h2>
+                </div>
+                <div class="live-status">
+                    <span class="status-dot pulse"></span> Synthetic Engine Active
+                </div>
+            </header>
+
+            <!-- Section 1: Overview -->
+            <section id="overview" class="content-section active">
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <span class="card-label">Total Fiat Liabilities</span>
+                        <div class="card-value" id="stat-total-fiat">$0.00B</div>
+                        <span class="card-subtitle">Synthetic exchange</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="card-label">Total AUM</span>
+                        <div class="card-value" id="stat-total-aum">$0.00B</div>
+                        <span class="card-subtitle">Incl. crypto assets</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="card-label">Open Interest</span>
+                        <div class="card-value" id="stat-oi">$0.00B</div>
+                        <span class="card-subtitle">1.5× AUM · perps + CFD</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="card-label">Insurance Fund</span>
+                        <div class="card-value" id="stat-if">$0.0M</div>
+                        <span class="card-subtitle">0.5% of AUM · current</span>
+                    </div>
+                </div>
+
+                <div class="scenario-status-row">
+                    <div class="scenario-card normal">
+                        <div class="sc-header">Normal</div>
+                        <div class="sc-prob" id="prob-normal">0.0% failure</div>
+                        <div class="sc-verdict green" id="verdict-normal">SOLVENT</div>
+                    </div>
+                    <div class="scenario-card mild">
+                        <div class="sc-header">Mild Stress</div>
+                        <div class="sc-prob" id="prob-mild">0.0% failure</div>
+                        <div class="sc-verdict amber" id="verdict-mild">INSOLVENT</div>
+                    </div>
+                    <div class="scenario-card severe">
+                        <div class="sc-header">Severe Stress</div>
+                        <div class="sc-prob" id="prob-severe">0.0% failure</div>
+                        <div class="sc-verdict red" id="verdict-severe">INSOLVENT</div>
+                    </div>
+                </div>
+
+                <div class="chart-row">
+                    <div class="chart-container square">
+                        <h3>Historical Regime Distribution</h3>
+                        <canvas id="chart-regimes"></canvas>
+                    </div>
+                    <div class="chart-container half">
+                        <h3>Monthly Scenario Mix (Simulated)</h3>
+                        <canvas id="chart-monthly-mix"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 2: Withdrawal Risk -->
+            <section id="withdrawal" class="content-section">
+                <div class="stat-grid">
+                    <div class="stat-card">
+                        <span class="card-label">Normal P99 Withdrawal</span>
+                        <div class="card-value highlight" id="wd-p99-normal">$0M</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="card-label">Mild P99 Withdrawal</span>
+                        <div class="card-value highlight" id="wd-p99-mild">$0M</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="card-label">Severe P99 Withdrawal</span>
+                        <div class="card-value highlight" id="wd-p99-severe">$0M</div>
+                    </div>
+                    <div class="stat-card">
+                        <span class="card-label">Institutional Lead Time</span>
+                        <div class="card-value highlight">~6-8 hours</div>
+                    </div>
+                </div>
+
+                <div class="chart-row flex-col">
+                    <div class="chart-container full">
+                        <h3>Withdrawal Distribution by Scenario</h3>
+                        <div class="chart-legend">
+                            <span class="legend-item"><span class="dot normal"></span> Normal</span>
+                            <span class="legend-item"><span class="dot mild"></span> Mild</span>
+                            <span class="legend-item"><span class="dot severe"></span> Severe</span>
+                        </div>
+                        <canvas id="chart-withdrawal-dist"></canvas>
+                    </div>
+                    <div class="chart-container full">
+                        <h3>64-Hour Cumulative Withdrawal Paths</h3>
+                        <canvas id="chart-withdrawal-paths"></canvas>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <h3>Scenario Comparison Matrix</h3>
+                    <table id="table-withdrawal-stats">
+                        <thead>
+                            <tr>
+                                <th>Scenario</th>
+                                <th>Trigger</th>
+                                <th>Daily Rate</th>
+                                <th>Mean Withdrawal</th>
+                                <th>P95</th>
+                                <th>P99</th>
+                                <th>CVaR 99%</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="callout amber show-border">
+                    <p><strong>Key Insight:</strong> Institutional withdrawals lead retail by ~6-8 hours in severe
+                        stress. Poisson arrival rate rises 12× from normal to severe — the primary driver of tail risk.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Section 3: Solvency -->
+            <section id="solvency" class="content-section">
+                <div class="chart-row">
+                    <div class="chart-container full">
+                        <h3>Stressed Balance Sheet Waterfall (Severe Scenario)</h3>
+                        <canvas id="chart-solvency-waterfall"></canvas>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <h3>VaR Method Comparison</h3>
+                    <table id="table-var-comparison">
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>VaR 95%</th>
+                                <th>VaR 99%</th>
+                                <th>CVaR 99%</th>
+                                <th>% of AUM</th>
+                                <th>Note</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="chart-row">
+                    <div class="chart-container full">
+                        <h3>Insurance Fund Drawdown Distribution (Severe)</h3>
+                        <canvas id="chart-if-drawdown"></canvas>
+                    </div>
+                </div>
+
+                <div class="callout amber show-border">
+                    <p><strong>Note:</strong> EWMA effective sample size = <span id="val-ess">0</span> days. The model
+                        is almost entirely pricing current volatility, not history — it will give false comfort in a
+                        calm market.</p>
+                </div>
+            </section>
+
+            <!-- Section 4: Reserve Policy -->
+            <section id="reserve" class="content-section">
+                <div class="data-table-container">
+                    <h3>Three-Layer Reserve Allocation (Recommendation)</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Layer</th>
+                                <th>Purpose</th>
+                                <th>Instrument</th>
+                                <th>Size</th>
+                                <th>Annual Cost</th>
+                                <th>Liquidity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Layer 1 — Instant</td>
+                                <td>Normal withdrawals</td>
+                                <td>Fiat in payment gateway</td>
+                                <td id="res-t1-size">$0M</td>
+                                <td id="res-t1-cost">$0M</td>
+                                <td>Zero delay</td>
+                            </tr>
+                            <tr>
+                                <td>Layer 2 — Fast</td>
+                                <td>Institutional jump phase</td>
+                                <td>Stablecoins, Overnight Repo</td>
+                                <td id="res-t2-size">$0M</td>
+                                <td id="res-t2-cost">$0M</td>
+                                <td>~Hours</td>
+                            </tr>
+                            <tr>
+                                <td>Layer 3 — Liquid</td>
+                                <td>Crisis backstop</td>
+                                <td>T-bills, Money Market</td>
+                                <td id="res-t3-size">$0M</td>
+                                <td>—</td>
+                                <td>1-2 days</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="policy-card">
+                    <div class="policy-header">RECOMMENDED MINIMUM RESERVE</div>
+                    <div class="policy-grid">
+                        <div class="policy-item">
+                            <span class="p-label">Tier 1 — Operating (VaR)</span>
+                            <span class="p-value" id="policy-t1">$0M</span>
+                        </div>
+                        <div class="policy-item">
+                            <span class="p-label">Tier 2 — Crisis (Scenario)</span>
+                            <span class="p-value" id="policy-t2">$0M</span>
+                        </div>
+                        <div class="policy-item">
+                            <span class="p-label">P(shortfall | Normal)</span>
+                            <span class="p-value" id="policy-p-normal">0.00%</span>
+                        </div>
+                        <div class="policy-item">
+                            <span class="p-label">P(shortfall | Severe)</span>
+                            <span class="p-value highlight red" id="policy-p-severe">0.00%</span>
+                        </div>
+                    </div>
+                    <div class="policy-footer">
+                        Shortfall probability at Tier 1 reserve level. Severe scenarios require Tier 2 buffers.
+                    </div>
+                </div>
+
+                <div class="chart-row">
+                    <div class="chart-container full">
+                        <h3>Reserve Cost Curve (Newsvendor Optimization)</h3>
+                        <canvas id="chart-cost-curve"></canvas>
+                    </div>
+                </div>
+
+                <div class="callout amber show-border">
+                    <p><strong>Warning:</strong> Stablecoins are operationally near-cash but systemically correlated
+                        with crypto stress. Layer 2 should be predominantly money market / T-bills, not
+                        stablecoin-heavy.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Data and App Logic -->
+    <script src="data.js"></script>
+    <script src="charts.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
