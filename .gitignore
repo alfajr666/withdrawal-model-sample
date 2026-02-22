@@ -5,7 +5,8 @@ __pycache__/
 
 # Data (Generated/Raw)
 data/raw/
-dashboard/data.js
+# dashboard/data.js (Tracked for GitHub Pages deployment)
+
 
 # Internal Briefs
 *_BRIEF.md
