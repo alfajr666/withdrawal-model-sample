@@ -1,4 +1,3 @@
-
 const COLORS = {
     normal: '#2196F3',
     mild: '#FF9800',
@@ -6,7 +5,24 @@ const COLORS = {
     luna: '#9C27B0'
 };
 
+let currentCurrency = 'IDR';
+const FX_RATE = 15900;
+
+function getChartScale() {
+    if (currentCurrency === 'IDR') {
+        return { div: 1e9, label: 'Billion Rp', symbol: 'Rp ' };
+    } else {
+        return { div: 1e9 * FX_RATE, label: 'Billion USD', symbol: '$' };
+    }
+}
+
+let charts = {}; // Store chart instances to destroy them before re-init
+
 function initCharts() {
+    // Destroy existing charts to prevent memory leaks and overlay
+    Object.values(charts).forEach(c => c.destroy());
+    charts = {};
+
     initRegimeDonut();
     initMonthlyMix();
     initWithdrawalDist();
@@ -19,7 +35,7 @@ function initCharts() {
 function initRegimeDonut() {
     const ctx = document.getElementById('chart-regimes');
     if (!ctx) return;
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
         type: 'doughnut',
         data: {
             labels: ['Normal', 'Stressed', 'Crisis'],
@@ -40,6 +56,7 @@ function initRegimeDonut() {
             }
         }
     });
+    charts['regimes'] = chart;
 }
 
 function initMonthlyMix() {
@@ -47,7 +64,7 @@ function initMonthlyMix() {
     if (!ctx) return;
     const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     // Synthetic seasonal stress
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels,
@@ -66,15 +83,20 @@ function initMonthlyMix() {
             }
         }
     });
+    charts['mix'] = chart;
 }
 
 function initWithdrawalDist() {
     const ctx = document.getElementById('chart-withdrawal-dist');
     if (!ctx) return;
 
+    const scale = getChartScale();
     const datasets = Object.keys(DATA.withdrawalHistograms).map(sc => ({
         label: sc.charAt(0).toUpperCase() + sc.slice(1),
-        data: DATA.withdrawalHistograms[sc].hist.map((h, i) => ({ x: DATA.withdrawalHistograms[sc].bins[i], y: h })),
+        data: DATA.withdrawalHistograms[sc].hist.map((h, i) => ({
+            x: DATA.withdrawalHistograms[sc].bins[i] / scale.div,
+            y: h
+        })),
         backgroundColor: COLORS[sc] + '44',
         borderColor: COLORS[sc],
         fill: true,
@@ -82,36 +104,38 @@ function initWithdrawalDist() {
         pointRadius: 0
     }));
 
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
         type: 'line',
         data: { datasets },
         options: {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                x: { type: 'linear', title: { display: true, text: 'Withdrawal Amount ($M)' }, grid: { color: '#334155' } },
+                x: { type: 'linear', title: { display: true, text: `Withdrawal Amount (${scale.label})` }, grid: { color: '#334155' } },
                 y: { title: { display: true, text: 'Density' }, grid: { color: '#334155' } }
             },
             plugins: { legend: { display: false } }
         }
     });
+    charts['dist'] = chart;
 }
 
 function initWithdrawalPaths() {
     const ctx = document.getElementById('chart-withdrawal-paths');
     if (!ctx) return;
 
+    const scale = getChartScale();
     const hours = Array.from({ length: 65 }, (_, i) => i);
-    const reserveLevel = DATA.overview.totalFiat * 0.10 / 1e6; // Industry baseline 10%
+    const reserveLevel = (DATA.overview.totalFiat * 0.10) / scale.div;
 
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: hours,
             datasets: [
                 ...Object.keys(DATA.hourlyPaths).map(sc => ({
                     label: sc.capitalize(),
-                    data: DATA.hourlyPaths[sc].map(v => v / 1e6),
+                    data: DATA.hourlyPaths[sc].map(v => v / scale.div),
                     borderColor: COLORS[sc],
                     borderWidth: 2,
                     fill: false,
@@ -132,16 +156,18 @@ function initWithdrawalPaths() {
             maintainAspectRatio: false,
             scales: {
                 x: { title: { display: true, text: 'Hours (64h weekend)' }, grid: { color: '#334155' } },
-                y: { title: { display: true, text: 'Cumulative Withdrawal ($M)' }, grid: { color: '#334155' } }
+                y: { title: { display: true, text: `Cumulative Withdrawal (${scale.label})` }, grid: { color: '#334155' } }
             }
         }
     });
+    charts['paths'] = chart;
 }
 
 function initSolvencyWaterfall() {
     const ctx = document.getElementById('chart-solvency-waterfall');
     if (!ctx) return;
 
+    const scale = getChartScale();
     const s = DATA.solvency.severe;
     const labels = ['Assets', 'Withdrawal (p99)', 'IF Shortfall', 'Market Risk', 'Net Position'];
     const data = [
@@ -153,12 +179,12 @@ function initSolvencyWaterfall() {
     ];
     data[4] = data.reduce((a, b) => a + b, 0);
 
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
         type: 'bar',
         data: {
             labels,
             datasets: [{
-                data: data.map(v => v / 1e6),
+                data: data.map(v => v / scale.div),
                 backgroundColor: data.map((v, i) => {
                     if (i === 0) return '#43A047';
                     if (i === 4) return v >= 0 ? '#1565C0' : '#C62828';
@@ -171,25 +197,27 @@ function initSolvencyWaterfall() {
             maintainAspectRatio: false,
             indexAxis: 'y',
             scales: {
-                x: { title: { display: true, text: '$M' }, grid: { color: '#334155' } },
+                x: { title: { display: true, text: scale.label }, grid: { color: '#334155' } },
                 y: { grid: { display: false } }
             },
             plugins: { legend: { display: false } }
         }
     });
+    charts['waterfall'] = chart;
 }
 
 function initIFDrawdown() {
     const ctx = document.getElementById('chart-if-drawdown');
     if (!ctx) return;
 
-    new Chart(ctx, {
+    const scale = getChartScale();
+    const chart = new Chart(ctx, {
         type: 'line',
         data: {
             labels: DATA.ifDrawdown.map((_, i) => i),
             datasets: [{
-                label: 'Drawdown ($M)',
-                data: DATA.ifDrawdown.map(v => v / 1e6),
+                label: `Drawdown (${scale.label})`,
+                data: DATA.ifDrawdown.map(v => v / scale.div),
                 borderColor: COLORS.severe,
                 backgroundColor: COLORS.severe + '22',
                 fill: true,
@@ -201,10 +229,11 @@ function initIFDrawdown() {
             maintainAspectRatio: false,
             scales: {
                 x: { display: false },
-                y: { title: { display: true, text: 'Drawdown ($M)' }, grid: { color: '#334155' } }
+                y: { title: { display: true, text: `Drawdown (${scale.label})` }, grid: { color: '#334155' } }
             }
         }
     });
+    charts['if'] = chart;
 }
 
 function initCostCurve() {

@@ -150,12 +150,13 @@ def compute_var_es(returns: np.ndarray, confidence: float) -> tuple:
 
 def compute_var_suite(
     market_df: pd.DataFrame = None,
-    portfolio_value: float = cfg.EXCHANGE_AUM,
+    AUM: float = cfg.EXCHANGE_AUM,
     portfolio_weights: dict = None,
 ) -> dict:
     """
     Compute the full hybrid VaR suite: HS, FHS, Stressed, and Parametric scenarios.
     """
+    print(f"Running stress tests on Rp {AUM/1e12:.1f}T AUM...")
     if market_df is None:
         market_df = generate_market_data()
 
@@ -178,28 +179,28 @@ def compute_var_suite(
     s_var, s_es = compute_var_es(worst_returns, 0.99)
 
     # Parametric scenario losses
-    scenarios = parametric_scenario_var(portfolio_weights, portfolio_value)
+    scenarios = parametric_scenario_var(portfolio_weights, AUM)
 
     # Two-tier reserve
-    tier1 = max(hs_99_v * portfolio_value, fhs_v * portfolio_value)
-    tier2 = max(s_var * portfolio_value, max(s["loss_usd"] for s in scenarios.values()))
+    tier1 = max(hs_99_v * AUM, fhs_v * AUM)
+    tier2 = max(s_var * AUM, max(s["loss_usd"] for s in scenarios.values()))
 
     return {
         "hs_var_99_pct":  hs_99_v,
-        "hs_var_99_usd":  hs_99_v * portfolio_value,
-        "hs_cvar_99_usd": hs_99_es * portfolio_value,
-        "hs_var_95_usd":  hs_95_v * portfolio_value,
+        "hs_var_99_usd":  hs_99_v * AUM,
+        "hs_cvar_99_usd": hs_99_es * AUM,
+        "hs_var_95_usd":  hs_95_v * AUM,
         "fhs_var_99_pct": fhs_v,
-        "fhs_var_99_usd": fhs_v * portfolio_value,
-        "fhs_cvar_99_usd": fhs_es * portfolio_value,
+        "fhs_var_99_usd": fhs_v * AUM,
+        "fhs_cvar_99_usd": fhs_es * AUM,
         "stressed_var_pct": s_var,
-        "stressed_var_99_usd": s_var * portfolio_value,
-        "stressed_cvar_99_usd": s_es * portfolio_value,
+        "stressed_var_99_usd": s_var * AUM,
+        "stressed_cvar_99_usd": s_es * AUM,
         "scenario_losses":  scenarios,
         "tier1_reserve":    tier1,
         "tier2_reserve":    tier2,
         "ewma_ess_days":    cfg.EWMA_ESS,
-        "portfolio_value":  portfolio_value,
+        "portfolio_value":  AUM,
     }
 
 
@@ -209,20 +210,20 @@ def var_comparison_table(var_result: dict) -> pd.DataFrame:
     rows = [
         {
             "Method":        "HS-VaR (365d)",
-            "VaR % (99%)":   f"{var_result['hs_var_pct']:.2%}",
-            "VaR $M (99%)":  f"${var_result['hs_var_99']/1e6:.1f}M",
+            "VaR % (99%)":   f"{var_result['hs_var_99_pct']:.2%}",
+            "VaR Rp B (99%)":  f"Rp {var_result['hs_var_99_usd']/1e9:.1f}B",
             "Failure Mode":  "Blind to new regimes. Fails silently.",
         },
         {
             "Method":        f"FHS-VaR (EWMA λ={cfg.EWMA_LAMBDA}, ESS~{cfg.EWMA_ESS:.0f}d)",
-            "VaR % (99%)":   f"{var_result['fhs_var_pct']:.2%}",
-            "VaR $M (99%)":  f"${var_result['fhs_var_99']/1e6:.1f}M",
+            "VaR % (99%)":   f"{var_result['fhs_var_99_pct']:.2%}",
+            "VaR Rp B (99%)":  f"Rp {var_result['fhs_var_99_usd']/1e9:.1f}B",
             "Failure Mode":  "Prices current vol only. Loses memory of tail events.",
         },
         {
             "Method":        "Stressed VaR (worst 90-day window)",
             "VaR % (99%)":   f"{var_result['stressed_var_pct']:.2%}",
-            "VaR $M (99%)":  f"${var_result['stressed_var_99']/1e6:.1f}M",
+            "VaR Rp B (99%)":  f"Rp {var_result['stressed_var_99_usd']/1e9:.1f}B",
             "Failure Mode":  "Only as bad as worst period in data.",
         },
     ]
@@ -230,9 +231,9 @@ def var_comparison_table(var_result: dict) -> pd.DataFrame:
         rows.append({
             "Method":        f"Parametric: {scen.upper()} shock",
             "VaR % (99%)":   f"{loss['loss_pct']:.2%}",
-            "VaR $M (99%)":  f"${loss['loss_usd']/1e6:.1f}M",
+            "VaR Rp B (99%)":  f"Rp {loss['loss_usd']/1e9:.1f}B",
             "Failure Mode":  "Point estimate; no distribution. Forward-looking overlay.",
-        })
+        },)
     return pd.DataFrame(rows).set_index("Method")
 
 
@@ -244,13 +245,13 @@ if __name__ == "__main__":
     mdf = generate_market_data()
     var = compute_var_suite(mdf)
 
-    print(f"\n  HS-VaR 99%      : {var['hs_var_pct']:.2%}  (${var['hs_var_99']/1e6:.1f}M)")
-    print(f"  FHS-VaR 99%     : {var['fhs_var_pct']:.2%}  (${var['fhs_var_99']/1e6:.1f}M)")
-    print(f"  Stressed VaR    : {var['stressed_var_pct']:.2%}  (${var['stressed_var_99']/1e6:.1f}M)")
+    print(f"\n  HS-VaR 99%      : {var['hs_var_99_pct']:.2%}  (Rp {var['hs_var_99_usd']/1e9:.1f}B)")
+    print(f"  FHS-VaR 99%     : {var['fhs_var_99_pct']:.2%}  (Rp {var['fhs_var_99_usd']/1e9:.1f}B)")
+    print(f"  Stressed VaR    : {var['stressed_var_pct']:.2%}  (Rp {var['stressed_var_99_usd']/1e9:.1f}B)")
     print(f"  EWMA ESS        : {var['ewma_ess_days']:.0f} days")
-    print(f"\n  Tier 1 Reserve  : ${var['tier1_reserve']/1e6:.1f}M")
-    print(f"  Tier 2 Reserve  : ${var['tier2_reserve']/1e6:.1f}M")
+    print(f"\n  Tier 1 Reserve  : Rp {var['tier1_reserve']/1e9:.1f}B")
+    print(f"  Tier 2 Reserve  : Rp {var['tier2_reserve']/1e9:.1f}B")
     print("\n  Scenario losses:")
     for s, v in var["scenario_losses"].items():
-        print(f"    {s:6s}: {v['loss_pct']:.1%}  (${v['loss_usd']/1e6:.1f}M)")
+        print(f"    {s:6s}: {v['loss_pct']:.1%}  (Rp {v['loss_usd']/1e9:.1f}B)")
     print("\n[historical_var.py] OK")

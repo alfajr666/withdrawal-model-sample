@@ -5,12 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Liquidity Sentinel | Exchange Stress Testing</title>
-    <!-- Technical Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap"
-        rel="stylesheet">
+        href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap"
+        rel="stylesheet" />
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
@@ -29,8 +26,8 @@
             </div>
 
             <nav class="nav-links">
-                <a href="#overview" class="nav-item active" data-section="overview">
-                    <span class="icon">◈</span> Overview
+                <a href="#status" class="nav-item active" data-section="status">
+                    <span class="icon">⊕</span> Operational Status
                 </a>
                 <a href="#withdrawal" class="nav-item" data-section="withdrawal">
                     <span class="icon">◉</span> Withdrawal Risk
@@ -56,67 +53,197 @@
         <main class="main-content">
             <header class="top-bar">
                 <div class="section-title">
-                    <h2 id="current-section-name">Overview</h2>
+                    <h2 id="current-section-name">Operational Status</h2>
                 </div>
-                <div class="live-status">
-                    <span class="status-dot pulse"></span> Synthetic Engine Active
+                <div class="top-bar-right">
+                    <div class="live-status">
+                        <span class="status-dot pulse"></span> Synthetic Engine Active
+                    </div>
+                    <div class="currency-toggle-wrap">
+                        <button id="toggle-currency" class="currency-btn">
+                            <span id="currency-label">IDR</span>
+                            <span class="fx-rate-tooltip">15,900</span>
+                        </button>
+                    </div>
                 </div>
             </header>
 
-            <!-- Section 1: Overview -->
-            <section id="overview" class="content-section active">
+            <!-- Section 0: Operational Status -->
+            <section id="status" class="content-section active">
+
+                <!-- KPI Stats (Merged from Overview) -->
                 <div class="stat-grid">
-                    <div class="stat-card">
-                        <span class="card-label">Total Fiat Liabilities</span>
-                        <div class="card-value" id="stat-total-fiat">$0.00B</div>
-                        <span class="card-subtitle">Synthetic exchange</span>
+                    <div class="stat-card kpi">
+                        <span class="card-label kpi-label">Total Fiat Liabilities</span>
+                        <div class="card-value kpi-value" id="stat-total-fiat">$0.00B</div>
+                        <span class="card-subtitle kpi-sub">Synthetic exchange</span>
                     </div>
-                    <div class="stat-card">
-                        <span class="card-label">Total AUM</span>
-                        <div class="card-value" id="stat-total-aum">$0.00B</div>
-                        <span class="card-subtitle">Incl. crypto assets</span>
+                    <div class="stat-card kpi">
+                        <span class="card-label kpi-label">Total AUM</span>
+                        <div class="card-value kpi-value" id="stat-total-aum">$0.00B</div>
+                        <span class="card-subtitle kpi-sub">Incl. crypto assets</span>
                     </div>
-                    <div class="stat-card">
-                        <span class="card-label">Open Interest</span>
-                        <div class="card-value" id="stat-oi">$0.00B</div>
-                        <span class="card-subtitle">1.5× AUM · perps + CFD</span>
+                    <div class="stat-card kpi">
+                        <span class="card-label kpi-label">Open Interest</span>
+                        <div class="card-value kpi-value" id="stat-oi">$0.00B</div>
+                        <span class="card-subtitle kpi-sub">1.5× AUM · perps + CFD</span>
                     </div>
-                    <div class="stat-card">
-                        <span class="card-label">Insurance Fund</span>
-                        <div class="card-value" id="stat-if">$0.0M</div>
-                        <span class="card-subtitle">0.5% of AUM · current</span>
-                    </div>
-                </div>
-
-                <div class="scenario-status-row">
-                    <div class="scenario-card normal">
-                        <div class="sc-header">Normal</div>
-                        <div class="sc-prob" id="prob-normal">0.0% failure</div>
-                        <div class="sc-verdict green" id="verdict-normal">SOLVENT</div>
-                    </div>
-                    <div class="scenario-card mild">
-                        <div class="sc-header">Mild Stress</div>
-                        <div class="sc-prob" id="prob-mild">0.0% failure</div>
-                        <div class="sc-verdict amber" id="verdict-mild">INSOLVENT</div>
-                    </div>
-                    <div class="scenario-card severe">
-                        <div class="sc-header">Severe Stress</div>
-                        <div class="sc-prob" id="prob-severe">0.0% failure</div>
-                        <div class="sc-verdict red" id="verdict-severe">INSOLVENT</div>
+                    <div class="stat-card kpi">
+                        <span class="card-label kpi-label">Insurance Fund</span>
+                        <div class="card-value kpi-value" id="stat-if">$0.0M</div>
+                        <span class="card-subtitle kpi-sub">0.5% of AUM · current</span>
                     </div>
                 </div>
 
-                <div class="chart-row">
-                    <div class="chart-container square">
-                        <h3>Historical Regime Distribution</h3>
-                        <canvas id="chart-regimes"></canvas>
+                <!-- Active Scenario Banner -->
+                <div class="status-banner" id="status-banner">
+                    <div class="status-banner-left">
+                        <div class="status-banner-label">ACTIVE SCENARIO</div>
+                        <div class="status-banner-value" id="status-scenario-name">—</div>
                     </div>
-                    <div class="chart-container half">
-                        <h3>Monthly Scenario Mix (Simulated)</h3>
-                        <canvas id="chart-monthly-mix"></canvas>
+                    <div class="status-banner-right">
+                        <div class="status-banner-label">WINDOW</div>
+                        <div class="status-banner-time" id="status-window">FRI 17:00 → MON 09:00</div>
+                        <div class="status-banner-sub">64 hrs · Bank rails offline</div>
                     </div>
                 </div>
+
+                <!-- Row 1: Fiat Position + Insurance Fund -->
+                <div class="status-grid">
+
+                    <div class="status-card" id="card-fiat">
+                        <div class="card-label">Fiat Reserve Position</div>
+                        <span class="status-verdict" id="verdict-fiat">—</span>
+                        <div class="status-primary" id="fiat-gap">—</div>
+                        <div class="status-sub">Shortfall vs. required Layer 1 reserve</div>
+                        <div class="status-breakdown">
+                            <div class="breakdown-row">
+                                <span class="bk-key">Current reserve (gateway)</span>
+                                <span class="bk-val" id="fiat-current">—</span>
+                            </div>
+                            <div class="breakdown-row">
+                                <span class="bk-key">Required — Layer 1 (VaR)</span>
+                                <span class="bk-val amber" id="fiat-req-l1">—</span>
+                            </div>
+                            <div class="breakdown-row">
+                                <span class="bk-key">Required — Layer 2 (P95)</span>
+                                <span class="bk-val amber" id="fiat-req-l2">—</span>
+                            </div>
+                            <div class="breakdown-row">
+                                <span class="bk-key">Gap to Layer 1 minimum</span>
+                                <span class="bk-val" id="fiat-gap-label">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="status-card" id="card-insurance">
+                        <div class="card-label">Insurance Fund Position</div>
+                        <span class="status-verdict" id="verdict-insurance">—</span>
+                        <div class="status-primary" id="if-gap">—</div>
+                        <div class="status-sub">Projected shortfall under active scenario</div>
+                        <div class="status-breakdown">
+                            <div class="breakdown-row">
+                                <span class="bk-key">Current IF balance</span>
+                                <span class="bk-val" id="if-current">—</span>
+                            </div>
+                            <div class="breakdown-row">
+                                <span class="bk-key">Expected drawdown (P99)</span>
+                                <span class="bk-val amber" id="if-drawdown">—</span>
+                            </div>
+                            <div class="breakdown-row">
+                                <span class="bk-key">P(fund exhaustion)</span>
+                                <span class="bk-val" id="if-prob-exhaustion">—</span>
+                            </div>
+                            <div class="breakdown-row">
+                                <span class="bk-key">Expected clawback</span>
+                                <span class="bk-val" id="if-clawback">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Row 2: Time Buffer + Weekend Readiness -->
+                <div class="status-grid">
+
+                    <div class="status-card" id="card-time">
+                        <div class="card-label">Time to Reserve Exhaustion</div>
+                        <span class="status-verdict" id="verdict-time">—</span>
+                        <div class="status-time-body">
+                            <div class="status-time-main">
+                                <div class="status-primary" id="time-hours">—</div>
+                                <div class="status-sub">At current withdrawal velocity</div>
+                            </div>
+                            <div class="status-time-bar-wrap">
+                                <div class="time-bar-label">
+                                    <span>0 hrs</span><span>64 hrs</span>
+                                </div>
+                                <div class="time-bar-track">
+                                    <div class="time-bar-fill" id="time-bar-fill"></div>
+                                </div>
+                                <div class="time-bar-label" style="margin-top:5px;">
+                                    <span id="time-bar-label-left">—</span>
+                                    <span>End of weekend</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="status-breakdown">
+                            <div class="breakdown-row">
+                                <span class="bk-key">Institutional lead detected</span>
+                                <span class="bk-val" id="time-inst-lead">—</span>
+                            </div>
+                            <div class="breakdown-row">
+                                <span class="bk-key">Current withdrawal velocity</span>
+                                <span class="bk-val" id="time-velocity">—</span>
+                            </div>
+                            <div class="breakdown-row">
+                                <span class="bk-key">Retail panic onset (est.)</span>
+                                <span class="bk-val amber" id="time-retail-onset">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="status-card" id="card-readiness">
+                        <div class="card-label">Weekend Readiness</div>
+                        <span class="status-verdict" id="verdict-readiness">—</span>
+                        <div class="status-sub" style="margin-bottom:10px;">Total capital gap</div>
+                        <div class="status-primary" id="readiness-gap">—</div>
+                        <div class="status-sub">Fiat shortfall + IF gap under active scenario P99</div>
+                        <div class="status-breakdown">
+                            <div class="breakdown-row">
+                                <span class="bk-key">Fiat reserve gap</span>
+                                <span class="bk-val" id="readiness-fiat-gap">—</span>
+                            </div>
+                            <div class="breakdown-row">
+                                <span class="bk-key">Insurance fund gap</span>
+                                <span class="bk-val" id="readiness-if-gap">—</span>
+                            </div>
+                            <div class="breakdown-row">
+                                <span class="bk-key">Proprietary capital buffer</span>
+                                <span class="bk-val green" id="readiness-prop">—</span>
+                            </div>
+                            <div class="breakdown-row">
+                                <span class="bk-key">Net position</span>
+                                <span class="bk-val" id="readiness-net">—</span>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Required Action Row -->
+                <div class="action-divider-label">Required Action</div>
+                <div class="action-row" id="action-row">
+                    <div class="action-icon">⚠</div>
+                    <div class="action-text">
+                        <div class="action-title" id="action-title">—</div>
+                        <div class="action-desc" id="action-desc">—</div>
+                    </div>
+                    <div class="action-badge" id="action-badge">—</div>
+                </div>
+
             </section>
+
 
             <!-- Section 2: Withdrawal Risk -->
             <section id="withdrawal" class="content-section">

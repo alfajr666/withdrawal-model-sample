@@ -40,7 +40,7 @@ def generate_trader_population(
     Returns
     -------
     pd.DataFrame with columns:
-        trader_id, trader_type, margin (USD), leverage, notional (USD), position (long/short)
+        trader_id, trader_type, margin (IDR), leverage, notional (IDR), position (long/short)
     """
     rng = np.random.default_rng(seed)
 
@@ -66,10 +66,12 @@ def generate_trader_population(
         cfg.RETAIL_LEVERAGE_MIN, cfg.RETAIL_LEVERAGE_MAX,
         n_retail, rng,
     )
-    # Log-normal notional distribution (retail)
+    # Retail: median ~Rp 1.59 million (~$100 × 15,900)
+    # ln(1_590_000) ≈ 14.28
     retail_notional = rng.lognormal(
-        mean=np.log(retail_notional_total / n_retail) - 0.5,
-        sigma=1.0, size=n_retail
+        mean=14.28,
+        sigma=1.8,
+        size=n_retail
     )
     # Rescale to sum to target
     retail_notional = retail_notional / retail_notional.sum() * retail_notional_total
@@ -80,9 +82,12 @@ def generate_trader_population(
         cfg.INST_LEVERAGE_MIN, cfg.INST_LEVERAGE_MAX,
         n_inst, rng,
     )
+    # Institutional: median ~Rp 159 million (~$10k × 15,900)
+    # ln(159_000_000) ≈ 18.88
     inst_notional = rng.lognormal(
-        mean=np.log(inst_notional_total / n_inst) - 0.5,
-        sigma=0.8, size=n_inst
+        mean=18.88,
+        sigma=1.5,
+        size=n_inst
     )
     inst_notional = inst_notional / inst_notional.sum() * inst_notional_total
 
@@ -177,7 +182,7 @@ def simulate_liquidation_cascade(
     traders                : pd.DataFrame
     initial_shock          : float — initial price drop (e.g., -0.35)
     aum                    : float — exchange AUM baseline
-    insurance_fund_initial : float — starting IF balance (USD)
+    insurance_fund_initial : float — starting IF balance (IDR)
     n_steps                : int — cascade iterations
 
     Returns
@@ -322,11 +327,11 @@ def insurance_fund_summary_table(if_results: dict, aum: float) -> pd.DataFrame:
     for scenario, res in if_results.items():
         rows.append({
             "Scenario":                   scenario.upper(),
-            "IF Initial ($M)":            f"${if_initial/1e6:.1f}M",
-            "Mean IF Drawdown ($M)":      f"${res['mean_if_drawdown']/1e6:.2f}M",
-            "p99 IF Drawdown ($M)":       f"${res['p99_if_drawdown']/1e6:.2f}M",
+            "IF Initial (Rp B)":          f"Rp {if_initial/1e9:.1f}B",
+            "Mean IF Drawdown (Rp B)":    f"Rp {res['mean_if_drawdown']/1e9:.2f}B",
+            "p99 IF Drawdown (Rp B)":     f"Rp {res['p99_if_drawdown']/1e9:.2f}B",
             "Exhaustion Probability":     f"{res['exhaustion_probability']:.1%}",
-            "Expected Clawback ($M)":     f"${res['expected_clawback']/1e6:.2f}M",
+            "Expected Clawback (Rp B)":   f"Rp {res['expected_clawback']/1e9:.2f}B",
             "Final Price Shock (mean)":   f"{res['mean_final_shock']:.1%}",
         })
     return pd.DataFrame(rows).set_index("Scenario")
@@ -337,8 +342,8 @@ def insurance_fund_summary_table(if_results: dict, aum: float) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     AUM = cfg.EXCHANGE_AUM
-    print(f"Simulating insurance fund on ${AUM/1e6:.0f}M AUM derivatives exchange...")
-    print(f"  Traders: {cfg.N_TRADERS:,}  |  IF initial: ${AUM * cfg.INSURANCE_FUND_INITIAL/1e6:.1f}M  |  OI: ${AUM * cfg.OI_TO_AUM_RATIO/1e6:.0f}M")
+    print(f"Simulating insurance fund on Rp {AUM/1e12:.1f}T AUM derivatives exchange...")
+    print(f"  Traders: {cfg.N_TRADERS:,}  |  IF initial: Rp {AUM * cfg.INSURANCE_FUND_INITIAL/1e9:.1f}B  |  OI: Rp {AUM * cfg.OI_TO_AUM_RATIO/1e12:.1f}T")
 
     results = simulate_insurance_fund(AUM, n_simulations=200)
     table   = insurance_fund_summary_table(results, AUM)

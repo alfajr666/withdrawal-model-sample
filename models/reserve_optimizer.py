@@ -139,13 +139,13 @@ def optimize_reserve(
         )
         rows.append({
             "Scenario":               scenario.capitalize(),
-            "Newsvendor Reserve ($M)": nv["optimal_reserve"] / 1e6,
-            "CVaR 99% Reserve ($M)":  nv["cvar_99_reserve"] / 1e6,
+            "Newsvendor Reserve (Rp B)": nv["optimal_reserve"] / 1e9,
+            "CVaR 99% Reserve (Rp B)":  nv["cvar_99_reserve"] / 1e9,
             "Newsvendor % AUM":        nv["optimal_reserve"] / total_fiat,
             "CVaR 99% % AUM":          nv["cvar_99_reserve"] / total_fiat,
-            "Annual Cost - NV ($M)":   nv["annual_cost_optimal_hold"] / 1e6,
-            "Annual Cost - CVaR ($M)": nv["annual_cost_cvar_hold"] / 1e6,
-            "Annual Cost - Unhedged ($M)": nv["annual_cost_unhedged"] / 1e6,
+            "Annual Cost - NV (Rp B)":   nv["annual_cost_optimal_hold"] / 1e9,
+            "Annual Cost - CVaR (Rp B)": nv["annual_cost_cvar_hold"] / 1e9,
+            "Annual Cost - Unhedged (Rp B)": nv["annual_cost_unhedged"] / 1e9,
         })
 
     return pd.DataFrame(rows).set_index("Scenario")
@@ -180,12 +180,12 @@ def tier_reserve(
     tier3 = max(withdrawal_p99 + insurance_fund_obligation - tier1 - tier2, 0)
 
     rows = [
-        {"Tier": "Layer 1 — Instant", "Instrument": "Fiat / Bank",           "Amount ($M)": tier1 / 1e6, "Yield": "~0%"},
-        {"Tier": "Layer 2 — Fast",    "Instrument": "Money Market / Stables", "Amount ($M)": tier2 / 1e6, "Yield": "~4–5%"},
-        {"Tier": "Layer 3 — Liquid",  "Instrument": "T-bills",                "Amount ($M)": tier3 / 1e6, "Yield": "~4–5%"},
+        {"Tier": "Layer 1 — Instant", "Instrument": "Fiat / Bank",           "Amount (Rp B)": tier1 / 1e9, "Yield": "~0%"},
+        {"Tier": "Layer 2 — Fast",    "Instrument": "Money Market / Stables", "Amount (Rp B)": tier2 / 1e9, "Yield": "~6–7%"},
+        {"Tier": "Layer 3 — Liquid",  "Instrument": "T-bills",                "Amount (Rp B)": tier3 / 1e9, "Yield": "~6–7%"},
     ]
     df = pd.DataFrame(rows).set_index("Tier")
-    df.loc["TOTAL", :] = ["All instruments", df["Amount ($M)"].sum(), "Blended"]
+    df.loc["TOTAL", :] = ["All instruments", df["Amount (Rp B)"].sum(), "Blended"]
     return df
 
 
@@ -197,7 +197,7 @@ if __name__ == "__main__":
     from models.withdrawal_forecast import run_all_scenarios
 
     AUM   = cfg.EXCHANGE_AUM
-    print(f"Running reserve optimization on ${AUM/1e6:.0f}M AUM...")
+    print(f"Running reserve optimization on Rp {AUM/1e12:.1f}T AUM...")
 
     results = run_all_scenarios(AUM, n_simulations=2000)
     opt_table = optimize_reserve(results, AUM)

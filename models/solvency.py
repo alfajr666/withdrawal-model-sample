@@ -43,9 +43,9 @@ def build_stressed_balance_sheet(
     Parameters
     ----------
     scenario               : "normal" | "mild" | "severe" | "luna"
-    total_fiat_liabilities : float — total exchange fiat liabilities (USD)
-    total_aum_assets       : float — total exchange AUM assets (USD)
-    fiat_reserve           : float — current fiat reserve held by exchange (USD)
+    total_fiat_liabilities : float — total exchange fiat liabilities (IDR)
+    total_aum_assets       : float — total exchange AUM assets (IDR)
+    fiat_reserve           : float — current fiat reserve held by exchange (IDR)
     withdrawal_p99         : float — 99th pctile withdrawal demand under this scenario
     var_result             : dict from historical_var.compute_var_suite()
     if_result              : dict for this scenario from simulate_insurance_fund()
@@ -79,6 +79,17 @@ def build_stressed_balance_sheet(
     total_liabilities = fiat_withdrawal_liability + deriv_shortfall + market_risk_loss
 
     # ---- SOLVENCY ----
+    # RECOMMENDED RESERVE = Fiat Reserve Asset (Baseline)
+    recommended_reserve = fiat_reserve_asset
+    
+    # OJK regulatory floor override
+    ojk_floor = cfg.OJK_MIN_EQUITY_IDR
+    if recommended_reserve < ojk_floor:
+        recommended_reserve = ojk_floor
+        ojk_floor_applied = True
+    else:
+        ojk_floor_applied = False
+
     net_position = total_assets - total_liabilities
     solvent      = net_position >= 0
 
@@ -109,6 +120,10 @@ def build_stressed_balance_sheet(
         "min_capital_required":   min_capital_required,
         "solvency_verdict":       "SOLVENT ✓" if solvent else "INSOLVENT ✗",
         "capital_adequate":       adequate,
+        # OJK Regulatory
+        "recommended_reserve":    recommended_reserve,
+        "ojk_min_equity_idr":     cfg.OJK_MIN_EQUITY_IDR,
+        "ojk_floor_applied":      ojk_floor_applied,
     }
 
 
@@ -188,12 +203,12 @@ def solvency_summary_table(solvency_results: dict) -> pd.DataFrame:
     for scenario, s in solvency_results.items():
         rows.append({
             "Scenario":             scenario.upper(),
-            "Total Assets ($M)":    f"${s['total_assets']/1e6:.1f}M",
-            "Withdrawal Demand":    f"${s['fiat_withdrawal_demand']/1e6:.1f}M",
-            "Deriv. Shortfall":     f"${s['deriv_shortfall']/1e6:.2f}M",
-            "Market Risk":          f"${s['market_risk_loss']/1e6:.1f}M",
-            "Total Liabilities":    f"${s['total_liabilities']/1e6:.1f}M",
-            "Net Position ($M)":    f"${s['net_position']/1e6:.1f}M",
+            "Total Assets (Rp B)":  f"Rp {s['total_assets']/1e9:.1f}B",
+            "Withdrawal Demand":    f"Rp {s['fiat_withdrawal_demand']/1e9:.1f}B",
+            "Deriv. Shortfall":     f"Rp {s['deriv_shortfall']/1e9:.2f}B",
+            "Market Risk":          f"Rp {s['market_risk_loss']/1e9:.1f}B",
+            "Total Liabilities":    f"Rp {s['total_liabilities']/1e9:.1f}B",
+            "Net Position (Rp B)":  f"Rp {s['net_position']/1e9:.1f}B",
             "CAR":                  f"{s['capital_adequacy_ratio']:.2f}x",
             "Verdict":              s["solvency_verdict"],
         })
@@ -231,7 +246,7 @@ if __name__ == "__main__":
     from data.market_data import generate_market_data
 
     AUM = cfg.EXCHANGE_AUM
-    print(f"Running solvency analysis on ${AUM/1e6:.0f}M AUM (10% fiat reserve)...")
+    print(f"Running solvency analysis on Rp {AUM/1e12:.1f}T AUM (20% fiat reserve)...")
 
     wd_results = run_all_scenarios(AUM, n_simulations=1000)
     mdf        = generate_market_data()

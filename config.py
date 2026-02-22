@@ -20,11 +20,11 @@ RETAIL_SHARE        = 0.95           # 95% of accounts are retail
 INST_SHARE          = 0.05           # 5% institutional
 INST_BALANCE_SHARE  = 0.65           # Institutional holds ~65% of total fiat
 
-# Log-normal balance distribution parameters (log of USD balance)
-RETAIL_LOG_MU       = 8.5            # retail mean: ~$4,900 median
-RETAIL_LOG_SIGMA    = 2.2            # retail std  (Gini ~0.85–0.94)
-INST_LOG_MU         = 13.5           # institutional mean: ~$730K median
-INST_LOG_SIGMA      = 1.8            # institutional std
+# Log-normal balance distribution parameters (log of IDR balance)
+RETAIL_BALANCE_MU    = 13.59    # e^13.59 ≈ Rp 800k median retail balance
+RETAIL_BALANCE_SIGMA = 2.2      # unchanged
+INST_BALANCE_MU      = 18.19    # e^18.19 ≈ Rp 80M median institutional balance
+INST_BALANCE_SIGMA   = 1.8      # unchanged
 
 # ---------------------------------------------------------------------------
 # Withdrawal Rates (fraction of total fiat, per day)
@@ -66,11 +66,11 @@ INST_LEAD_TIME_HOURS = {
 # ---------------------------------------------------------------------------
 # Reserve Optimization (Newsvendor)
 # ---------------------------------------------------------------------------
-YIELD_RANGE         = (0.04, 0.05)   # Opportunity cost: 4–5% annualized
-EMERGENCY_COST      = (0.08, 0.10)   # Emergency liquidity: 8–10% annualized
+YIELD_RANGE         = (0.06, 0.07)   # PUAB / SBI / reksa dana pasar uang
+EMERGENCY_COST      = (0.10, 0.12)   # Indonesian corporate credit line rates
 
-YIELD_MID           = 0.045          # Mid-point for optimization
-EMERGENCY_COST_MID  = 0.09           # Mid-point for optimization
+YIELD_MID           = 0.065          # Mid-point for optimization
+EMERGENCY_COST_MID  = 0.11           # Mid-point for optimization
 
 # Newsvendor critical ratio: q* = emergency / (opportunity + emergency)
 # At (4.5%, 9%): q* ≈ 0.667 — reserve to the 2/3 quantile
@@ -79,7 +79,7 @@ NEWSVENDOR_CRITICAL_RATIO = EMERGENCY_COST_MID / (YIELD_MID + EMERGENCY_COST_MID
 # ---------------------------------------------------------------------------
 # Bank Rail Availability
 # ---------------------------------------------------------------------------
-WEEKEND_HOURS   = 64    # Friday 5PM → Monday 9AM (hours with no bank settlement)
+WEEKEND_HOURS   = 65    # Friday 4PM to Monday 9AM WIB (1 hour earlier cut-off)
 
 # ---------------------------------------------------------------------------
 # VaR Parameters
@@ -191,13 +191,17 @@ TIER3_QUANTILE  = 0.99   # Gamma/Poisson p99
 PROP_CAPITAL_RATIO = 0.02   # 2% of AUM as exchange equity buffer
 
 # ---------------------------------------------------------------------------
-# Portfolio / Exchange AUM (synthetic baseline, in USD)
+# Portfolio / Exchange AUM (synthetic baseline, in IDR)
 # ---------------------------------------------------------------------------
 # Total Assets (including crypto)
-TOTAL_ASSETS_AUM       = 2_900_000_000   
+TOTAL_ASSETS_AUM       = 795_000_000_000   # ~$50M * 15,900
 
 # Fiat portion (customer liabilities)
-FIAT_LIABILITIES_TARGET = 2_230_000_000   # $2.23B baseline from brief
+FIAT_LIABILITIES_TARGET = 636_000_000_000  # Rp 636B (~$40M * 15,900)
 
 # Keep for compatibility where specifically used for scaling
 EXCHANGE_AUM    = TOTAL_ASSETS_AUM
+
+# ── OJK Regulatory Floor (POJK No. 27/2024) ──────────────────────────────────
+OJK_MIN_EQUITY_IDR  = 50_000_000_000   # Rp 50 billion — hard maintained equity floor
+USD_IDR_FX_RATE     = 15_900           # USD/IDR reference rate (update periodically)

@@ -1,9 +1,10 @@
 # Liquidity Sentinel
-### Crypto Exchange Withdrawal & Solvency Stress Testing
+### Crypto Exchange Withdrawal & Solvency Stress Testing (IDR-Native, USD-Convertible)
 
-A stress testing framework that models the fiat liquidity and solvency of a crypto exchange under realistic withdrawal scenarios — addressing a structural gap that standard Proof of Reserve (PoR) frameworks do not cover.
+A stress testing framework that models the fiat liquidity and solvency of a crypto exchange under realistic withdrawal scenarios — addressing a structural gap that standard Proof of Reserve (PoR) frameworks do not cover. **Updated for Rp 795B (~$50M) AUM Scale.**
 
 **[Live Dashboard →](https://alfajr666.github.io/withdrawal-model-sample/dashboard/)**
+
 
 ---
 
@@ -23,13 +24,14 @@ This project builds the dynamic stress testing layer that sits on top of PoR dat
 
 ## What This Model Solves
 
-The primary perspective is the **Financial Operations (FinOps) / Treasury team**. The core operational problem: *how much fiat must we hold entering a weekend to cover withdrawals, given that bank rails will be unavailable for 64 hours?*
+The primary perspective is the **Financial Operations (FinOps) / Treasury team**. The core operational problem: *how much fiat must we hold entering a weekend to cover withdrawals, given that bank rails will be unavailable for 65 hours?* (e.g., Friday 5 PM WIB – Monday 10 AM WIB).
 
-This is a cash buffer optimization problem with a fundamental tension. Holding too much idle fiat is capital-inefficient — that capital could earn 4–5% annualized in T-bills or money market funds. Holding too little risks being unable to fulfill withdrawals, with emergency liquidity costing 8–10% annualized. The model quantifies both sides and finds the optimal balance.
+This is a cash buffer optimization problem with a fundamental tension. Holding too much idle fiat is capital-inefficient — that capital could earn 5-6% annualized in IDR money market funds. Holding too little risks being unable to fulfill withdrawals, with emergency liquidity costing 10-12% annualized. The model quantifies both sides and finds the optimal balance.
 
 For derivatives exchanges, a second problem runs in parallel: *how large does the insurance fund need to be to absorb the socialized losses from a liquidation cascade without requiring clawback from profitable traders?*
 
-The model outputs concrete, actionable numbers: a dollar reserve recommendation, its annual opportunity cost, the probability of shortfall at each scenario, and the minimum capital required for solvency across all risk dimensions.
+The model outputs concrete, actionable numbers: a billion-IDR reserve recommendation, its annual opportunity cost, the probability of shortfall at each scenario, and a real-time **USD/IDR toggle** for reporting convenience.
+
 
 ---
 
@@ -61,7 +63,8 @@ liquidity-sentinel/
 
 ### 1. User Base and Balance Distribution
 
-The synthetic exchange has 100,000 users with a **log-normal balance distribution** — the standard choice for financial wealth distributions, capturing the long right tail of large accounts. 5% of accounts are institutional (hedge funds, OTC desks, corporate treasuries), holding ~65% of total fiat balances.
+The synthetic exchange has 100,000 users with a **log-normal balance distribution** — the standard choice for financial wealth distributions. The model is scaled to a realistic target of **Rp 795 Billion (~$50M) Total AUM**, with fiat liabilities of ~Rp 636 Billion (~$40M). 
+
 
 This concentration is the central planning challenge. Average-based reserve sizing is dangerous when the top 1% of accounts controls the majority of exposure. The model treats retail and institutional accounts as structurally different processes — not just different sizes of the same behavior.
 
@@ -217,11 +220,12 @@ print(summarize_stress_test(results).to_string(index=False))
 The model is designed to accept real Proof of Reserve data. Binance, OKX, and others publish Merkle tree-based attestations publicly. Substitute the synthetic `total_fiat` with the real figure:
 
 ```python
-REAL_TOTAL_FIAT = 4_800_000_000  # from published PoR report
+REAL_TOTAL_FIAT_IDR = 4_800_000_000_000  # Rp 4.8 Trillion from published report
 assessment = run_full_solvency_assessment(
-    total_fiat=REAL_TOTAL_FIAT,
-    total_aum=REAL_TOTAL_FIAT * 1.3,
+    total_fiat=REAL_TOTAL_FIAT_IDR,
+    total_aum=REAL_TOTAL_FIAT_IDR * 1.3,
 )
+
 ```
 
 ### Configure assumptions

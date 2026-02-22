@@ -8,8 +8,7 @@ data/raw/
 dashboard/data.js
 
 # Internal Briefs
-AGENT_BRIEF.md
-DASHBOARD_BRIEF.md
+*_BRIEF.md
 
 # Env
 .venv/

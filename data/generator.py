@@ -18,6 +18,10 @@ import os
 # Add parent directory to path for config import
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import config as cfg
+try:
+    from data.market_data import generate_market_data
+except ImportError:
+    from market_data import generate_market_data
 
 
 def generate_user_base(seed: int = cfg.RANDOM_SEED, target_aum: float = cfg.EXCHANGE_AUM) -> pd.DataFrame:
@@ -41,15 +45,15 @@ def generate_user_base(seed: int = cfg.RANDOM_SEED, target_aum: float = cfg.EXCH
 
     # Retail: log-normal balance distribution
     retail_balances = rng.lognormal(
-        mean=cfg.RETAIL_LOG_MU,
-        sigma=cfg.RETAIL_LOG_SIGMA,
+        mean=cfg.RETAIL_BALANCE_MU,
+        sigma=cfg.RETAIL_BALANCE_SIGMA,
         size=n_retail,
     )
 
     # Institutional: log-normal with higher mean (larger accounts)
     inst_balances = rng.lognormal(
-        mean=cfg.INST_LOG_MU,
-        sigma=cfg.INST_LOG_SIGMA,
+        mean=cfg.INST_BALANCE_MU,
+        sigma=cfg.INST_BALANCE_SIGMA,
         size=n_inst,
     )
 
@@ -269,14 +273,21 @@ if __name__ == "__main__":
 
     gini = compute_gini(users["fiat_balance"].values)
 
+    # 2. Save to CSV
+    users.to_csv(cfg.USERS_CSV_PATH, index=False)
+    
+    # 3. Market data (persistence)
+    mdf = generate_market_data()
+    mdf.to_csv(cfg.MARKET_CSV_PATH, index=False)
+
     print(f"  Users generated : {len(users):,}")
-    print(f"  Total fiat AUM  : ${total_fiat:,.0f}")
+    print(f"  Total fiat AUM  : Rp {total_fiat:,.0f}")
     print(f"  Inst. bal. share: {inst_share:.1%}  (target: {cfg.INST_BALANCE_SHARE:.0%})")
     print(f"  Gini coefficient: {gini:.3f}  (target: 0.85–0.94)")
 
     print("\nGenerating weekend withdrawal time series (severe scenario)...")
     wdf = generate_weekend_withdrawals(total_fiat, "severe")
-    print(f"  Peak hour withdrawal : ${wdf['total'].max():,.0f}")
-    print(f"  Total 64hr withdrawal: ${wdf['total'].sum():,.0f}")
+    print(f"  Peak hour withdrawal : Rp {wdf['total'].max():,.0f}")
+    print(f"  Total 65hr withdrawal: Rp {wdf['total'].sum():,.0f}")
     print(f"  As % of AUM          : {wdf['total'].sum() / total_fiat:.1%}")
     print("\n[generator.py] OK")

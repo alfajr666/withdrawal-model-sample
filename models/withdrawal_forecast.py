@@ -115,11 +115,11 @@ def summarize_results(results: dict, total_fiat: float) -> pd.DataFrame:
     for scenario, res in results.items():
         rows.append({
             "Scenario":       scenario.capitalize(),
-            "Median ($M)":    res["percentiles"][50] / 1e6,
-            "p90 ($M)":       res["percentiles"][90] / 1e6,
-            "p95 ($M)":       res["percentiles"][95] / 1e6,
-            "VaR 99% ($M)":   res["var_99"] / 1e6,
-            "CVaR 99% ($M)":  res["cvar_99"] / 1e6,
+            "Median (Rp B)":    res["percentiles"][50] / 1e9,
+            "p90 (Rp B)":       res["percentiles"][90] / 1e9,
+            "p95 (Rp B)":       res["percentiles"][95] / 1e9,
+            "VaR 99% (Rp B)":   res["var_99"] / 1e9,
+            "CVaR 99% (Rp B)":  res["cvar_99"] / 1e9,
             "Median % AUM":   res["percentiles"][50] / total_fiat,
             "VaR 99% % AUM":  res["var_99"] / total_fiat,
         })
@@ -132,7 +132,7 @@ def summarize_results(results: dict, total_fiat: float) -> pd.DataFrame:
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     AUM = cfg.EXCHANGE_AUM
-    print(f"Running Monte Carlo withdrawal forecasting on ${AUM/1e6:.0f}M AUM...")
+    print(f"Running Monte Carlo withdrawal forecasting on Rp {AUM/1e12:.1f}T AUM...")
 
     results = run_all_scenarios(AUM, n_simulations=1000)  # fast smoke test
 
