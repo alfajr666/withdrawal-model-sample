@@ -11,7 +11,7 @@ Senior Treasury & Finance Operations Specialist | CFA Level I | FRM Part I
 This repository features **Liquidity Sentinel**, a stress testing framework that models the fiat liquidity and solvency of a crypto exchange under realistic withdrawal scenarios. It addresses a structural gap in standard Proof of Reserve (PoR) frameworks by quantifying the fiat dimension and the impact of banking infrastructure limits.
 
 **[Live Dashboard →](https://alfajr666.github.io/withdrawal-model-sample/dashboard/)**  
-**[Detailed Analysis & Methodology →](https://delomite.com/post/withdrawal-model)**
+**[Detailed Analysis & Methodology →](https://delomite.com/blog/withdrawal-model/)**
 
 ### Business Context
 Proof of Reserve (PoR) confirms crypto asset backing but leaves crucial operational risks invisible:
